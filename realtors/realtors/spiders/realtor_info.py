@@ -12,9 +12,9 @@ class RealtorInfo(InitSpider):
     allowed_domains=['http://www.realtor.com']
     profiles_list_xpath = '//*[@id="AgentHeaderInfo"]/div'
     item_fields = {
-        'name': '',
-        'number': '',
-        'company': '',
+        'name': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[1]/h1/em/text()',
+        'number': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[3]/text()',
+        'company': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[4]/label/text()',
         'website': '', #if displayed
         'email': '', # if displayed
         'broker': '' #true or false
