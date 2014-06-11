@@ -10,6 +10,16 @@ from realtors.items import RealtorsItem
 class RealtorInfo(InitSpider):
     name = 'realtor_info'
     allowed_domains=['http://www.realtor.com']
+    profiles_list_xpath = '//*[@id="AgentHeaderInfo"]/div'
+    item_fields = {
+        'name': '',
+        'number': '',
+        'company': '',
+        'website': '', #if displayed
+        'email': '', # if displayed
+        'broker': '' #true or false
+
+    }
 
     def __init__(self, **kwargs):
         super(RealtorInfo, self).__init__(**kwargs)
@@ -21,6 +31,7 @@ class RealtorInfo(InitSpider):
         urls = []
         urls.append(url)
         self.start_urls = urls
+
 
 
 
@@ -44,5 +55,16 @@ class RealtorInfo(InitSpider):
 
 
     def parse_profile(self, response):
-        #stuff
-        return
+
+        sel = HtmlXPathSelector(response)
+
+        for site in sel.select(self.profiles_list_xpath):
+            loader = XPathItemLoader(FramescrapperItem(), selector=site)
+
+            #define processes
+            loader.dafault_input_processor = MapCompose(unicode.strip)
+            loader.default_output_processor = Join()
+
+            for field, xpath in self.item_fields.iteritems():
+                loader.add_xpath(field, xpath)
+            yield loader.load_item()

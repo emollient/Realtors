@@ -10,6 +10,9 @@ class RealtorsItem(Item):
     name = Field()
     company = Field()
     number = Field()
+    website = Field()
+    email = Field()
+    broker = Field()
 
 
 
