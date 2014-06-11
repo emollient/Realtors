@@ -1,7 +1,9 @@
 from scrapy.contrib.spiders.init import InitSpider
-from scrapy.selector import Selector
+from scrapy.http import Request, FormRequest
 
 from selenium import selenium, webdriver
+
+import urlparse
 
 from realtors.items import RealtorsItem
 
@@ -28,16 +30,19 @@ class RealtorInfo(InitSpider):
         sel.get(response.url)
         sel.implicitly_wait(10)
 
-        items = []
+        profiles = []
 
-        sites = sel.find_elements_by_xpath('//*[@id="2"]')
-        """
+        sites = sel.find_elements_by_xpath('//*[@class="agentProfileRowNum"')
+
         for site in sites:
-            item = RealtorsItem()
-            item['name'] = site.find_element_by_xpath('//div[@class="wrap"]/a/em').text
-            item['company'] = site.find_element_by_xpath('//ul[@class="summary"]/label').text
-            item['number'] = site.find_element_by_xpath('//ul[@class="summary"]/li[@class="phone"]').text
-            items.append(item)
-        """
-        print(sites[0].get_attribute('class'))
-        self.selenium.quit()
+            profiles.append('http://www.realtor.com/realestateagents' + site.find_element_by_xpath('//div[class="wrap"]/a').get_attribute('href'))
+
+        for profile in profiles:
+            profile = urlparse.urljoin(response.url, url)
+            self.log('Found item link: %s' %url)
+            yield Request(url, callback='self.parse_profile', dont_filter=True)
+
+
+    def parse_profile(self, response):
+        #stuff
+        return
