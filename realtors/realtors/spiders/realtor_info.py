@@ -1,7 +1,13 @@
 from scrapy.contrib.spiders.init import InitSpider
 from scrapy.http import Request, FormRequest
+from scrapy.selector import HtmlXPathSelector
+from scrapy.contrib.loader import XPathItemLoader
+from scrapy.contrib.loader.processor import Join, MapCompose
 
 from selenium import selenium, webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 import urlparse
 
@@ -15,6 +21,7 @@ class RealtorInfo(InitSpider):
         'name': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[1]/h1/em/text()',
         'number': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[3]/text()',
         'company': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[4]/label/text()',
+        'address': '',
         'website': '', #if displayed
         'email': '', # if displayed
         'broker': '' #true or false
@@ -43,28 +50,38 @@ class RealtorInfo(InitSpider):
 
         profiles = []
 
-        sites = sel.find_elements_by_xpath('//*[@class="agentProfileRowNum"')
+        wait = WebDriverWait(sel, 10)
 
-        for site in sites:
-            profiles.append('http://www.realtor.com/realestateagents' + site.find_element_by_xpath('//div[class="wrap"]/a').get_attribute('href'))
 
-        for profile in profiles:
-            profile = urlparse.urljoin(response.url, url)
-            self.log('Found item link: %s' %url)
-            yield Request(url, callback='self.parse_profile', dont_filter=True)
+        try:
+            elements =  wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'agentProfileRowNum')))
+            for element in elements:
+                profiles.append(element.find_element_by_tag_name('a').get_attribute('href'))
+
+            for profile in profiles:
+                self.log('Found item link: %s' %profile)
+                yield Request(profile, callback=self.parse_profile, dont_filter=True)
+        finally:
+            print "done"
+
 
 
     def parse_profile(self, response):
 
-        sel = HtmlXPathSelector(response)
+        wait = WebDriverWait(self.selenium, 10)
 
-        for site in sel.select(self.profiles_list_xpath):
-            loader = XPathItemLoader(FramescrapperItem(), selector=site)
+        element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="pageContent"]/div/div[@id="mainColumn"]/div[1]')))
+        print element.get_attribute("innerHTML")
 
-            #define processes
-            loader.dafault_input_processor = MapCompose(unicode.strip)
-            loader.default_output_processor = Join()
 
-            for field, xpath in self.item_fields.iteritems():
-                loader.add_xpath(field, xpath)
-            yield loader.load_item()
+        item = RealtorsItem()
+        item['name'] = ""
+        item['company'] = ""
+        item['number'] = ""
+        item['address'] = ""
+        item['website'] = ""
+        item['email'] = ""
+        item['broker'] = ""
+
+        return item
+
