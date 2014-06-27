@@ -16,17 +16,6 @@ from realtors.items import RealtorsItem
 class RealtorInfo(InitSpider):
     name = 'realtor_info'
     allowed_domains=['http://www.realtor.com']
-    profiles_list_xpath = '//*[@id="AgentHeaderInfo"]/div'
-    item_fields = {
-        'name': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[1]/h1/em/text()',
-        'number': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[3]/text()',
-        'company': '//*[@id="AgentHeaderInfo"]/div/div/ul[1]/li[4]/label/text()',
-        'address': '',
-        'website': '', #if displayed
-        'email': '', # if displayed
-        'broker': '' #true or false
-
-    }
 
     def __init__(self, **kwargs):
         super(RealtorInfo, self).__init__(**kwargs)
@@ -38,9 +27,6 @@ class RealtorInfo(InitSpider):
         urls = []
         urls.append(url)
         self.start_urls = urls
-
-
-
 
 
     def parse(self, response):
@@ -70,18 +56,21 @@ class RealtorInfo(InitSpider):
 
         wait = WebDriverWait(self.selenium, 10)
 
-        element = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="pageContent"]/div/div[@id="mainColumn"]/div[1]')))
+        element = wait.until(EC.presence_of_element_located((By.ID, 'AgentHeaderInfo')))
         print element.get_attribute("innerHTML")
 
 
         item = RealtorsItem()
-        item['name'] = ""
-        item['company'] = ""
-        item['number'] = ""
-        item['address'] = ""
-        item['website'] = ""
-        item['email'] = ""
-        item['broker'] = ""
+        item['name'] = element.find_element_by_xpath('//li[@class="name"]/h1/em').text
+        item['number'] = element.find_element_by_xpath('//li[@class="phone"]').text
+        item['address'] = element.find_element_by_xpath('//li[@class="address"]').text
+        item['website'] = element.find_element_by_xpath('//li[@class="website"]').get_attribute('href')
+        if "Broker" in item['name']:
+            item['broker'] = 'true'
+        else:
+            item['broker'] = 'false'
+
+
 
         return item
 
